@@ -2,9 +2,9 @@ import streamlit as st
 from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 
-st.set_page_config(page_title="ניקיונות פסח משפחתיים", page_icon="🧹", layout="centered")
+st.set_page_config(page_title="נקיונות או לא להיות", page_icon="🧽", layout="centered")
 
-# הגדרת משתתפים, צבעים ותמונות ברירת מחדל (אפשר לשנות שמות בהתאם לגיליון)
+# הגדרת משתתפים, צבעים ותמונות ברירת מחדל
 PARTICIPANTS = {
     "אבא": {"color": "#4a90e2", "image": "👨", "type": "parent"},
     "מאמו": {"color": "#e24a8d", "image": "👩", "type": "parent"},
@@ -14,13 +14,50 @@ PARTICIPANTS = {
     "גבריאל": {"color": "#34495e", "image": "🧒", "type": "child"}
 }
 
-# עיצוב בסיסי בעברית עם התאמות לכרטיסיות
+# עיצוב בסיסי בעברית עם התאמות לכרטיסיות ולדף הפתיחה
 st.markdown("""
 <style> 
     .stApp { 
         direction: RTL; 
         text-align: right; 
     } 
+    
+    /* עיצוב כותרת ראשית של האפליקציה */
+    .main-title {
+        font-size: 3.5rem;
+        font-weight: 900;
+        text-align: center;
+        background: -webkit-linear-gradient(45deg, #2196F3, #4CAF50, #FFC107);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 0px;
+        padding-bottom: 0px;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    /* כותרת משנה */
+    .sub-title {
+        font-size: 1.5rem;
+        text-align: center;
+        color: #555;
+        font-weight: 500;
+        margin-top: -10px;
+        margin-bottom: 30px;
+    }
+    
+    /* רקע ואווירה אביבית עדינה */
+    .stApp::before {
+        content: "🌸 🦋 🧼 ✨ 🧽 🌷";
+        position: fixed;
+        top: 10px;
+        left: 0;
+        width: 100%;
+        text-align: center;
+        font-size: 2rem;
+        opacity: 0.1;
+        pointer-events: none;
+        z-index: -1;
+    }
     
     /* עיצוב כרטיסייה למשימה */
     .task-card-content {
@@ -87,7 +124,10 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.title("🧹 מבצע פסח: הבית של משפחת גרופי")
+# כותרת ראשית וכותרת משנה מעוצבות
+st.markdown('<div class="main-title">נקיונות או לא להיות! 🧼</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-title">ג\'רופי מנקים לפסח תשפ"ו ✨</div>', unsafe_allow_html=True)
+st.divider()
 
 # חיבור לשיטס
 conn = st.connection("gsheets", type=GSheetsConnection)
