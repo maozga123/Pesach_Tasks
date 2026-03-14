@@ -84,9 +84,9 @@ st.markdown("""
     
     /* --- עיצוב כרטיסיית המשימה --- */
     .task-card-content {
-        padding: 10px 12px;
-        border-radius: 8px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        padding: 12px 15px;
+        border-radius: 12px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         margin-bottom: 8px;
         width: 100%;
         display: flex;
@@ -96,7 +96,7 @@ st.markdown("""
     }
     
     .task-text {
-        font-size: 1.05em;
+        font-size: 1.1em;
         font-weight: 500;
         color: #333;
         word-wrap: break-word;
@@ -110,39 +110,47 @@ st.markdown("""
     }
     
     /* --- פתרון מוחלט למרכוז שורות המשימות (מוחל רק בתוך הטאבים) --- */
-    /* מבטל ריווחים אוטומטיים של העמודות ב-Streamlit */
+    /* ביטול ריווחים מובנים של העמודות */
     [data-baseweb="tab-panel"] [data-testid="column"] {
         padding: 0 !important;
         margin: 0 !important;
     }
     
-    /* קונטיינר השורה (stHorizontalBlock) יהיה ברוחב מלא, אבל ימרכז את העמודות הפנימיות */
+    /* כפייה על העמודות להישאר באותה שורה תמיד, ולמרכז אותן */
     [data-baseweb="tab-panel"] [data-testid="stHorizontalBlock"] {
         display: flex !important;
         flex-direction: row !important;
         flex-wrap: nowrap !important;
-        justify-content: center !important; /* קריטי למרכוז! דוחף הכל לאמצע המסך */
-        align-items: stretch !important;
-        width: 100% !important;
-        gap: 10px !important;
-        margin-bottom: 10px !important;
+        justify-content: center !important; 
+        align-items: center !important;
+        
+        width: 90% !important; /* רוחב יחסי קטן יותר מהמסך */
+        max-width: 400px !important;
+        margin: 0 auto 10px auto !important; /* דוחף למרכז המסך גם באנכי וגם באופקי */
+        gap: 15px !important; /* רווח ברור בין תיבת הסימון לטקסט */
     }
     
-    /* עמודת תיבת הסימון (צד ימין ב-RTL) */
+    /* עמודת תיבת הסימון (צד ימין) */
     [data-baseweb="tab-panel"] [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(1) {
-        flex: 0 0 45px !important; /* רוחב קבוע למניעת כיווץ */
-        width: 45px !important;
-        min-width: 45px !important;
+        flex: 0 0 30px !important; /* רוחב קטן ומדויק לתיבת סימון נטו */
+        width: 30px !important;
+        min-width: 30px !important;
         display: flex;
         align-items: center;
         justify-content: center;
+        overflow: visible !important;
     }
     
-    /* עמודת הטקסט (צד שמאל ב-RTL) */
+    /* עמודת הטקסט (צד שמאל) */
     [data-baseweb="tab-panel"] [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(2) {
-        flex: 0 1 calc(90% - 55px) !important; /* הטקסט יתפוס 90% מרוחב המסך פחות הרוחב של הצ'קבוקס */
-        max-width: 350px !important; /* הגבלה כדי שבמסכים גדולים זה לא יימתח מדי */
-        min-width: 0 !important;
+        flex: 1 1 auto !important; /* לוקח את שאר המקום */
+        min-width: 0 !important; 
+    }
+
+    /* הגדלת תיבת הסימון עצמה בנייד לנוחות */
+    [data-baseweb="checkbox"] {
+        transform: scale(1.3); /* מגדיל את הצ'קבוקס שיהיה קל ללחיצה */
+        margin: 0 !important;
     }
 
     /* --- כרטיסיית המשתתף (Header) --- */
@@ -158,8 +166,9 @@ st.markdown("""
         color: white;
         box-shadow: 0 8px 16px rgba(0,0,0,0.15);
         text-align: center;
-        width: 90% !important;
-        max-width: 405px !important; /* תואם לרוחב המקסימלי של שורת המשימה (350+45+10) */
+        
+        width: 90% !important; /* תואם לרוחב המשימה */
+        max-width: 400px !important;
         box-sizing: border-box;
     }
     
@@ -328,12 +337,19 @@ else:
                     st.info(f"ל-{user} אין כרגע משימות. איזה כיף לו/לה! 🎉")
                 else:
                     for index, row in user_tasks.iterrows():
-                        # יצירת שורה אחת
-                        col1, col2 = st.columns([1, 10])
+                        # יצירת שורה אחת המכילה צ'קבוקס וטקסט
+                        col1, col2 = st.columns([1, 8])
                         
                         with col1:
                              status_val = bool(row['Status']) if pd.notna(row['Status']) else False
-                             is_done = st.checkbox("", value=status_val, key=f"task_{index}_{user}")
+                             
+                             # שימוש ב-label_visibility="collapsed" מסיר עטיפות נסתרות של סטרימליט שמעלימות את הצ'קבוקס בנייד!
+                             is_done = st.checkbox(
+                                 "Done", 
+                                 value=status_val, 
+                                 key=f"task_{index}_{user}", 
+                                 label_visibility="collapsed"
+                             )
                              
                              if is_done != status_val:
                                  df.at[index, 'Status'] = is_done
