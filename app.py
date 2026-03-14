@@ -82,9 +82,7 @@ st.markdown("""
         margin-bottom: 50px;
     }
     
-    /* --- עיצוב משימות מותאם במיוחד לנייד למניעת זליגה --- */
-    
-    /* הכרטיסייה שעוטפת את הטקסט */
+    /* --- עיצוב כרטיסיית המשימה --- */
     .task-card-content {
         padding: 10px 12px;
         border-radius: 8px;
@@ -94,16 +92,15 @@ st.markdown("""
         display: flex;
         align-items: center;
         min-height: 50px;
-        box-sizing: border-box; /* חשוב מאוד כדי שהפדינג לא יגדיל את האלמנט */
+        box-sizing: border-box;
     }
     
-    /* הטקסט בתוך הכרטיסייה */
     .task-text {
         font-size: 1.05em;
         font-weight: 500;
         color: #333;
         word-wrap: break-word;
-        white-space: normal; /* מאפשר שבירת שורות טבעית */
+        white-space: normal; 
         line-height: 1.3;
     }
     
@@ -112,63 +109,58 @@ st.markdown("""
         color: #888;
     }
     
-    /* פתרון מרכוז והקטנת השורה למניעת זליגה */
-    /* מסתיר את הרווחים ש-Streamlit מוסיף אוטומטית */
-    [data-testid="column"] {
+    /* --- פתרון מוחלט למרכוז שורות המשימות (מוחל רק בתוך הטאבים) --- */
+    /* מבטל ריווחים אוטומטיים של העמודות ב-Streamlit */
+    [data-baseweb="tab-panel"] [data-testid="column"] {
         padding: 0 !important;
         margin: 0 !important;
     }
     
-    /* הופך את הבלוק האופקי לקטן יותר ומרוכז באמצע */
-    [data-testid="stHorizontalBlock"] {
+    /* קונטיינר השורה (stHorizontalBlock) יהיה ברוחב מלא, אבל ימרכז את העמודות הפנימיות */
+    [data-baseweb="tab-panel"] [data-testid="stHorizontalBlock"] {
         display: flex !important;
         flex-direction: row !important;
-        flex-wrap: nowrap !important; /* בשום אופן לא לשבור שורה! */
-        align-items: center !important;
-        
-        /* הקטנת הרוחב ומרכוז */
-        width: 90% !important; 
-        max-width: 400px !important;
-        margin: 0 auto 10px auto !important; /* מרכוז אוטומטי במרכז המסך */
-        gap: 5px !important;
+        flex-wrap: nowrap !important;
+        justify-content: center !important; /* קריטי למרכוז! דוחף הכל לאמצע המסך */
+        align-items: stretch !important;
+        width: 100% !important;
+        gap: 10px !important;
+        margin-bottom: 10px !important;
     }
     
-    /* העמודה של הצ'קבוקס (צד ימין - RTL) */
-    [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(1) {
-        width: 40px !important;
-        flex: 0 0 40px !important; /* גודל קבוע ומוחלט */
-        min-width: 40px !important;
-        max-width: 40px !important;
+    /* עמודת תיבת הסימון (צד ימין ב-RTL) */
+    [data-baseweb="tab-panel"] [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(1) {
+        flex: 0 0 45px !important; /* רוחב קבוע למניעת כיווץ */
+        width: 45px !important;
+        min-width: 45px !important;
         display: flex;
         align-items: center;
         justify-content: center;
     }
     
-    /* העמודה של הטקסט (צד שמאל - RTL) */
-    [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(2) {
-        width: calc(100% - 40px) !important;
-        flex: 1 1 calc(100% - 40px) !important;
-        min-width: 0 !important; /* קריטי כדי שהטקסט לא ידחוף את העמודה וישבור שורה */
+    /* עמודת הטקסט (צד שמאל ב-RTL) */
+    [data-baseweb="tab-panel"] [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(2) {
+        flex: 0 1 calc(90% - 55px) !important; /* הטקסט יתפוס 90% מרוחב המסך פחות הרוחב של הצ'קבוקס */
+        max-width: 350px !important; /* הגבלה כדי שבמסכים גדולים זה לא יימתח מדי */
+        min-width: 0 !important;
     }
 
-    /* כרטיסיות (Flash Cards) בנייד - עיצוב חדש */
+    /* --- כרטיסיית המשתתף (Header) --- */
     .participant-header {
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         gap: 10px;
-        margin-bottom: 15px;
+        margin: 0 auto 20px auto !important; /* מרכוז מוחלט באמצע המסך */
         padding: 20px 15px;
         border-radius: 15px;
         color: white;
         box-shadow: 0 8px 16px rgba(0,0,0,0.15);
         text-align: center;
-        width: 90%; /* התאמה לרוחב המשימות */
-        max-width: 400px;
-        margin-left: auto;
-        margin-right: auto;
-        box-sizing: border-box; /* מונע זליגה מהמסך */
+        width: 90% !important;
+        max-width: 405px !important; /* תואם לרוחב המקסימלי של שורת המשימה (350+45+10) */
+        box-sizing: border-box;
     }
     
     .participant-avatar {
@@ -291,7 +283,7 @@ else:
                     all_names.append(name)
                     PARTICIPANTS[name] = {"color": "#95a5a6", "image": "👤", "type": "other"}
                 
-        # --- העברת הוספת משימה לתוך expander במקום sidebar כדי למנוע כתיבה אנכית במובייל ---
+        # --- העברת הוספת משימה לתוך expander ---
         with st.expander("➕ הוספת משימה חדשה", expanded=False):
             with st.form("add_task_form"):
                 new_task_desc = st.text_input("תיאור המשימה")
@@ -336,7 +328,7 @@ else:
                     st.info(f"ל-{user} אין כרגע משימות. איזה כיף לו/לה! 🎉")
                 else:
                     for index, row in user_tasks.iterrows():
-                        # יצירת שורה אחת המכילה צ'קבוקס וטקסט (מעוצבת ומוגבלת ברוחב בעזרת ה-CSS שלמעלה)
+                        # יצירת שורה אחת
                         col1, col2 = st.columns([1, 10])
                         
                         with col1:
