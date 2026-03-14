@@ -81,76 +81,57 @@ st.markdown("""
         margin-top: 50px;
         margin-bottom: 50px;
     }
+
+    /* --- הפתרון החדש והאולטימטיבי למשימות במובייל --- */
+    /* במקום להשתמש בעמודות שקורסות, אנחנו מעצבים את הצ'קבוקס הטבעי של סטרימליט ככרטיסייה! */
     
-    /* --- עיצוב כרטיסיית המשימה --- */
-    .task-card-content {
-        padding: 12px 15px;
+    div[data-testid="stCheckbox"] {
+        background-color: #ffffff;
+        padding: 15px 20px;
         border-radius: 12px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        margin-bottom: 8px;
-        width: 100%;
-        display: flex;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        
+        /* מרכוז מוחלט וקביעת רוחב! */
+        margin: 0 auto 12px auto !important; 
+        width: 90% !important;
+        max-width: 400px !important;
+        
+        border-right: 5px solid #ff9800; /* ברירת מחדל: כתום למשימה פתוחה */
+        transition: all 0.3s ease;
+        display: flex !important;
         align-items: center;
-        min-height: 50px;
-        box-sizing: border-box;
     }
     
-    .task-text {
-        font-size: 1.1em;
+    /* עיצוב הטקסט בתוך הצ'קבוקס */
+    div[data-testid="stCheckbox"] label {
+        cursor: pointer;
+        width: 100%;
+    }
+    
+    div[data-testid="stCheckbox"] label div[data-testid="stMarkdownContainer"] p {
+        font-size: 1.15em;
         font-weight: 500;
         color: #333;
-        word-wrap: break-word;
-        white-space: normal; 
-        line-height: 1.3;
+        margin: 0;
+        padding-right: 10px; /* מרווח בין הוי לטקסט */
     }
     
-    .completed-task {
+    /* הגדלת ריבוע הוי עצמו כדי שיהיה נוח ללחיצה באצבע */
+    div[data-testid="stCheckbox"] input {
+        transform: scale(1.4);
+    }
+    
+    /* שינוי עיצוב הכרטיסייה כאשר המשימה בוצעה (נתמך ברוב הדפדפנים המודרניים בנייד) */
+    div[data-testid="stCheckbox"]:has(input:checked) {
+        background-color: #f0fdf4 !important; /* ירוק חלש */
+        border-right-color: #4caf50 !important; /* ירוק חזק */
+        opacity: 0.8;
+    }
+    
+    /* הוספת קו חוצה לטקסט כאשר בוצע */
+    div[data-testid="stCheckbox"]:has(input:checked) label div[data-testid="stMarkdownContainer"] p {
         text-decoration: line-through;
         color: #888;
-    }
-    
-    /* --- פתרון מוחלט למרכוז שורות המשימות (מוחל רק בתוך הטאבים) --- */
-    /* ביטול ריווחים מובנים של העמודות */
-    [data-baseweb="tab-panel"] [data-testid="column"] {
-        padding: 0 !important;
-        margin: 0 !important;
-    }
-    
-    /* כפייה על העמודות להישאר באותה שורה תמיד, ולמרכז אותן */
-    [data-baseweb="tab-panel"] [data-testid="stHorizontalBlock"] {
-        display: flex !important;
-        flex-direction: row !important;
-        flex-wrap: nowrap !important;
-        justify-content: center !important; 
-        align-items: center !important;
-        
-        width: 90% !important; /* רוחב יחסי קטן יותר מהמסך */
-        max-width: 400px !important;
-        margin: 0 auto 10px auto !important; /* דוחף למרכז המסך גם באנכי וגם באופקי */
-        gap: 15px !important; /* רווח ברור בין תיבת הסימון לטקסט */
-    }
-    
-    /* עמודת תיבת הסימון (צד ימין) */
-    [data-baseweb="tab-panel"] [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(1) {
-        flex: 0 0 30px !important; /* רוחב קטן ומדויק לתיבת סימון נטו */
-        width: 30px !important;
-        min-width: 30px !important;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: visible !important;
-    }
-    
-    /* עמודת הטקסט (צד שמאל) */
-    [data-baseweb="tab-panel"] [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(2) {
-        flex: 1 1 auto !important; /* לוקח את שאר המקום */
-        min-width: 0 !important; 
-    }
-
-    /* הגדלת תיבת הסימון עצמה בנייד לנוחות */
-    [data-baseweb="checkbox"] {
-        transform: scale(1.3); /* מגדיל את הצ'קבוקס שיהיה קל ללחיצה */
-        margin: 0 !important;
     }
 
     /* --- כרטיסיית המשתתף (Header) --- */
@@ -160,15 +141,17 @@ st.markdown("""
         align-items: center;
         justify-content: center;
         gap: 10px;
-        margin: 0 auto 20px auto !important; /* מרכוז מוחלט באמצע המסך */
+        
+        /* מרכוז מוחלט תואם לרוחב המשימות */
+        margin: 0 auto 20px auto !important; 
+        width: 90% !important; 
+        max-width: 400px !important;
+        
         padding: 20px 15px;
         border-radius: 15px;
         color: white;
         box-shadow: 0 8px 16px rgba(0,0,0,0.15);
         text-align: center;
-        
-        width: 90% !important; /* תואם לרוחב המשימה */
-        max-width: 400px !important;
         box-sizing: border-box;
     }
     
@@ -337,43 +320,25 @@ else:
                     st.info(f"ל-{user} אין כרגע משימות. איזה כיף לו/לה! 🎉")
                 else:
                     for index, row in user_tasks.iterrows():
-                        # יצירת שורה אחת המכילה צ'קבוקס וטקסט
-                        col1, col2 = st.columns([1, 8])
+                        # קריאת הסטטוס
+                        status_val = bool(row['Status']) if pd.notna(row['Status']) else False
                         
-                        with col1:
-                             status_val = bool(row['Status']) if pd.notna(row['Status']) else False
-                             
-                             # שימוש ב-label_visibility="collapsed" מסיר עטיפות נסתרות של סטרימליט שמעלימות את הצ'קבוקס בנייד!
-                             is_done = st.checkbox(
-                                 "Done", 
-                                 value=status_val, 
-                                 key=f"task_{index}_{user}", 
-                                 label_visibility="collapsed"
-                             )
-                             
-                             if is_done != status_val:
-                                 df.at[index, 'Status'] = is_done
-                                 conn.update(data=df)
-                                 st.toast("הסטטוס עודכן! 💾")
-                                 st.rerun()
-                             
-                        with col2:
-                             if is_done:
-                                 bg_color = "#f0fdf4"
-                                 border_color = "#4caf50"
-                                 text_class = "completed-task"
-                             else:
-                                 bg_color = "#ffffff"
-                                 border_color = user_color 
-                                 text_class = ""
-                            
-                             st.markdown(f"""
-                             <div style="background-color: {bg_color}; border-right: 5px solid {border_color};" class="task-card-content">
-                                 <div class="task-text {text_class}">
-                                     {row['Task']}
-                                 </div>
-                             </div>
-                             """, unsafe_allow_html=True)
+                        # גיבוי למחיקת טקסט במכשירים ישנים (שימוש ב-Markdown של סטרימליט)
+                        task_text = f"~~{row['Task']}~~" if status_val else row['Task']
+                        
+                        # --- הפתרון האולטימטיבי: שימוש בצ'קבוקס הטבעי של סטרימליט בלבד! ---
+                        # זה מבטיח שהוי והטקסט תמיד, אבל תמיד, יישארו ביחד בשורה אחת על כל מסך.
+                        is_done = st.checkbox(
+                            task_text, 
+                            value=status_val, 
+                            key=f"task_{index}_{user}"
+                        )
+                        
+                        if is_done != status_val:
+                            df.at[index, 'Status'] = is_done
+                            conn.update(data=df)
+                            st.toast("הסטטוס עודכן! 💾")
+                            st.rerun()
                      
     else:
         st.error("לא נמצאו עמודות מתאימות בגיליון (Assignee, Task, Status). נא לבדוק את קובץ הגוגל שיטס.")
