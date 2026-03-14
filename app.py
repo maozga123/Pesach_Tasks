@@ -265,9 +265,7 @@ if not st.session_state.show_tasks:
 else:
     # הצגת אנימציה אם סומנה משימה בסיבוב הקודם
     if st.session_state.show_bubbles:
-        # סטרימליט לא תומך בבועות סבון באופן מובנה, אז אנחנו משתמשים באפקט השלג (st.snow)
-        # שנראה ממש כמו פתיתי סבון/קצף ניקוי שנופלים! 🫧
-        st.snow()
+        st.balloons()
         st.session_state.show_bubbles = False
 
     df = get_data()
@@ -393,9 +391,9 @@ else:
                             conn.update(data=df)
                             
                             if is_done:
-                                # מפעיל את בועות הסבון (שלג) בריענון הבא
+                                # מפעיל את הבלונים בריענון הבא
                                 st.session_state.show_bubbles = True
-                                st.toast("כל הכבוד! משימה הושלמה! 🫧")
+                                st.toast("כל הכבוד! משימה הושלמה! 🎉")
                             else:
                                 st.toast("המשימה חזרה לרשימה 🔄")
 
