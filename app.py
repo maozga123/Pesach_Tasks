@@ -86,25 +86,25 @@ st.markdown("""
     
     /* הכרטיסייה שעוטפת את הטקסט */
     .task-card-content {
-        padding: 12px 15px;
+        padding: 10px 12px;
         border-radius: 8px;
         box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        margin-bottom: 10px;
+        margin-bottom: 8px;
         width: 100%;
         display: flex;
         align-items: center;
-        min-height: 60px;
-        box-sizing: border-box; /* חשוב מאוד כדי שהפדינג לא יגדיל את האלמנט מעבר ל-100% */
+        min-height: 50px;
+        box-sizing: border-box; /* חשוב מאוד כדי שהפדינג לא יגדיל את האלמנט */
     }
     
     /* הטקסט בתוך הכרטיסייה */
     .task-text {
-        font-size: 1.1em;
+        font-size: 1.05em;
         font-weight: 500;
         color: #333;
         word-wrap: break-word;
         white-space: normal; /* מאפשר שבירת שורות טבעית */
-        line-height: 1.4;
+        line-height: 1.3;
     }
     
     .completed-task {
@@ -112,29 +112,33 @@ st.markdown("""
         color: #888;
     }
     
-    /* פתרון אגרסיבי למניעת שבירת העמודות של Streamlit */
+    /* פתרון מרכוז והקטנת השורה למניעת זליגה */
     /* מסתיר את הרווחים ש-Streamlit מוסיף אוטומטית */
     [data-testid="column"] {
         padding: 0 !important;
         margin: 0 !important;
     }
     
-    /* הופך את הבלוק האופקי ל-Flexbox קשיח */
+    /* הופך את הבלוק האופקי לקטן יותר ומרוכז באמצע */
     [data-testid="stHorizontalBlock"] {
         display: flex !important;
         flex-direction: row !important;
         flex-wrap: nowrap !important; /* בשום אופן לא לשבור שורה! */
-        align-items: stretch !important;
-        width: 100% !important;
-        gap: 0px !important;
+        align-items: center !important;
+        
+        /* הקטנת הרוחב ומרכוז */
+        width: 90% !important; 
+        max-width: 400px !important;
+        margin: 0 auto 10px auto !important; /* מרכוז אוטומטי במרכז המסך */
+        gap: 5px !important;
     }
     
     /* העמודה של הצ'קבוקס (צד ימין - RTL) */
     [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(1) {
-        width: 50px !important;
-        flex: 0 0 50px !important; /* גודל קבוע ומוחלט */
-        min-width: 50px !important;
-        max-width: 50px !important;
+        width: 40px !important;
+        flex: 0 0 40px !important; /* גודל קבוע ומוחלט */
+        min-width: 40px !important;
+        max-width: 40px !important;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -142,10 +146,9 @@ st.markdown("""
     
     /* העמודה של הטקסט (צד שמאל - RTL) */
     [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(2) {
-        width: calc(100% - 50px) !important;
-        flex: 1 1 auto !important; /* לוקח את כל שאר המקום */
+        width: calc(100% - 40px) !important;
+        flex: 1 1 calc(100% - 40px) !important;
         min-width: 0 !important; /* קריטי כדי שהטקסט לא ידחוף את העמודה וישבור שורה */
-        padding-left: 5px !important; /* מרווח קטן משמאל כדי למנוע הידבקות לקצה המסך */
     }
 
     /* כרטיסיות (Flash Cards) בנייד - עיצוב חדש */
@@ -155,23 +158,26 @@ st.markdown("""
         align-items: center;
         justify-content: center;
         gap: 10px;
-        margin-bottom: 20px;
+        margin-bottom: 15px;
         padding: 20px 15px;
         border-radius: 15px;
         color: white;
         box-shadow: 0 8px 16px rgba(0,0,0,0.15);
         text-align: center;
-        width: 100%;
+        width: 90%; /* התאמה לרוחב המשימות */
+        max-width: 400px;
+        margin-left: auto;
+        margin-right: auto;
         box-sizing: border-box; /* מונע זליגה מהמסך */
     }
     
     .participant-avatar {
-        font-size: clamp(3em, 10vw, 4em);
+        font-size: clamp(2.5em, 8vw, 3.5em);
         background: rgba(255,255,255,0.2);
         border: 3px solid white;
         border-radius: 50%;
-        width: clamp(80px, 25vw, 100px);
-        height: clamp(80px, 25vw, 100px);
+        width: clamp(70px, 20vw, 90px);
+        height: clamp(70px, 20vw, 90px);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -181,7 +187,7 @@ st.markdown("""
     
     .participant-title {
         margin: 0;
-        font-size: clamp(1.5em, 6vw, 2em);
+        font-size: clamp(1.3em, 5vw, 1.8em);
         font-weight: bold;
         text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
         word-break: break-word;
@@ -316,7 +322,7 @@ else:
                 user_color = user_info["color"]
                 user_avatar = user_info["image"]
                 
-                # תחילת ה-Flash Card של המשתמש (מכיל את הכותרת והמשימות ביחד)
+                # עיצוב מרכזי של תמונת הפרופיל והכותרת
                 st.markdown(f"""
                 <div class="participant-header" style="background-color: {user_color};">
                     <div class="participant-avatar">{user_avatar}</div>
@@ -329,12 +335,8 @@ else:
                 if user_tasks.empty:
                     st.info(f"ל-{user} אין כרגע משימות. איזה כיף לו/לה! 🎉")
                 else:
-                    # יצירת מרווח בין הכותרת למשימות
-                    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
-                    
                     for index, row in user_tasks.iterrows():
-                        # שימוש ב-st.columns ליצירת שורה אחת של צ'קבוקס וטקסט
-                        # עדכנתי את היחסים לטובת כרטיסיית הטקסט
+                        # יצירת שורה אחת המכילה צ'קבוקס וטקסט (מעוצבת ומוגבלת ברוחב בעזרת ה-CSS שלמעלה)
                         col1, col2 = st.columns([1, 10])
                         
                         with col1:
