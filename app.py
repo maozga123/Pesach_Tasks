@@ -83,7 +83,6 @@ st.markdown("""
     }
 
     /* --- הפתרון החדש והאולטימטיבי למשימות במובייל --- */
-    /* במקום להשתמש בעמודות שקורסות, אנחנו מעצבים את הצ'קבוקס הטבעי של סטרימליט ככרטיסייה! */
     
     div[data-testid="stCheckbox"] {
         background-color: #ffffff;
@@ -91,12 +90,12 @@ st.markdown("""
         border-radius: 12px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         
-        /* מרכוז מוחלט וקביעת רוחב! */
+        /* הרחבת שורת המשימה! */
         margin: 0 auto 12px auto !important; 
-        width: 90% !important;
-        max-width: 400px !important;
+        width: 100% !important; 
+        max-width: 500px !important; 
         
-        border-right: 5px solid #ff9800; /* ברירת מחדל: כתום למשימה פתוחה */
+        border-right: 5px solid #ff9800;
         transition: all 0.3s ease;
         display: flex !important;
         align-items: center;
@@ -113,7 +112,7 @@ st.markdown("""
         font-weight: 500;
         color: #333;
         margin: 0;
-        padding-right: 10px; /* מרווח בין הוי לטקסט */
+        padding-right: 15px;
     }
     
     /* הגדלת ריבוע הוי עצמו כדי שיהיה נוח ללחיצה באצבע */
@@ -121,10 +120,10 @@ st.markdown("""
         transform: scale(1.4);
     }
     
-    /* שינוי עיצוב הכרטיסייה כאשר המשימה בוצעה (נתמך ברוב הדפדפנים המודרניים בנייד) */
+    /* שינוי עיצוב הכרטיסייה כאשר המשימה בוצעה */
     div[data-testid="stCheckbox"]:has(input:checked) {
-        background-color: #f0fdf4 !important; /* ירוק חלש */
-        border-right-color: #4caf50 !important; /* ירוק חזק */
+        background-color: #f0fdf4 !important; 
+        border-right-color: #4caf50 !important; 
         opacity: 0.8;
     }
     
@@ -142,10 +141,10 @@ st.markdown("""
         justify-content: center;
         gap: 10px;
         
-        /* מרכוז מוחלט תואם לרוחב המשימות */
+        /* הרחבת כרטיסיית המשתתף שתתאים בדיוק למשימות */
         margin: 0 auto 20px auto !important; 
-        width: 90% !important; 
-        max-width: 400px !important;
+        width: 100% !important; 
+        max-width: 500px !important;
         
         padding: 20px 15px;
         border-radius: 15px;
@@ -292,6 +291,46 @@ else:
                     else:
                         st.warning("יש להזין תיאור למשימה")
 
+        # --- הוספת ניהול ועריכת משימות ---
+        with st.expander("✏️ ניהול ועריכת כל המשימות", expanded=False):
+            st.markdown('<p style="font-size: 0.9em; color: #555;">כאן תוכלו לערוך טקסטים של משימות קיימות, להעביר משימות מילד לילד, ואפילו למחוק שורות שלמות. <b>לא לשכוח ללחוץ על השמירה!</b></p>', unsafe_allow_html=True)
+            
+            # עורך טבלה אינטראקטיבי של סטרימליט
+            edited_df = st.data_editor(
+                df,
+                num_rows="dynamic", # מאפשר מחיקה והוספה של שורות
+                use_container_width=True,
+                hide_index=True,
+                column_config={
+                    "Assignee": st.column_config.SelectboxColumn(
+                        "אחראי",
+                        help="מי מנקה?",
+                        width="medium",
+                        options=all_names,
+                        required=True,
+                    ),
+                    "Task": st.column_config.TextColumn(
+                        "המשימה",
+                        help="מה צריך לנקות?",
+                        width="large",
+                        required=True,
+                    ),
+                    "Status": st.column_config.CheckboxColumn(
+                        "בוצע?",
+                        help="האם המשימה הושלמה?",
+                        default=False,
+                    )
+                }
+            )
+            
+            # כפתור שמירה ייעודי לעורך הטבלה
+            if st.button("💾 שמור את הטבלה מעודכנת בגוגל שיטס", type="primary", use_container_width=True):
+                # מניעת שמירת שורות ריקות בטעות
+                edited_df = edited_df.dropna(subset=['Task'])
+                conn.update(data=edited_df)
+                st.toast("הטבלה התעדכנה בהצלחה! 💾")
+                st.rerun()
+
         # כותרת קטנה למעלה
         st.markdown('<div style="text-align:center; color:#888; margin-bottom:10px;">החלק ימינה/שמאלה בין השמות ↔️</div>', unsafe_allow_html=True)
         
@@ -327,7 +366,6 @@ else:
                         task_text = f"~~{row['Task']}~~" if status_val else row['Task']
                         
                         # --- הפתרון האולטימטיבי: שימוש בצ'קבוקס הטבעי של סטרימליט בלבד! ---
-                        # זה מבטיח שהוי והטקסט תמיד, אבל תמיד, יישארו ביחד בשורה אחת על כל מסך.
                         is_done = st.checkbox(
                             task_text, 
                             value=status_val, 
