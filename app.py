@@ -15,6 +15,8 @@ if 'show_tasks' not in st.session_state:
     st.session_state.show_tasks = False
 if 'show_bubbles' not in st.session_state:
     st.session_state.show_bubbles = False
+if 'selected_user' not in st.session_state:
+    st.session_state.selected_user = None
 
 # הגדרת משתתפים, צבעים ותמונות ברירת מחדל
 PARTICIPANTS = {
@@ -177,38 +179,12 @@ st.markdown("""
         text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
         word-break: break-word;
     }
-    
-    /* מראה של כרטיסיות גולשות (Flash cards) */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 10px;
-        justify-content: flex-start;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch; 
-        scrollbar-width: none; 
-        padding: 10px 5px;
+
+    /* הסתרת הטאבים המקוריים של סטרימליט כי יצרנו תפריט מותאם אישית */
+    div[data-testid="stTabs"] > div[data-baseweb="tab-list"] {
+        display: none;
     }
     
-    .stTabs [data-baseweb="tab-list"]::-webkit-scrollbar {
-        display: none; 
-    }
-    
-    .stTabs [data-baseweb="tab"] {
-        padding: 12px 20px;
-        white-space: nowrap;
-        background-color: #f8f9fa;
-        border-radius: 20px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        border: 1px solid #eee;
-        transition: all 0.2s ease;
-    }
-    
-    /* טאב פעיל */
-    .stTabs [aria-selected="true"] {
-        background-color: #e3f2fd !important;
-        border-color: #2196F3 !important;
-        transform: scale(1.05);
-        font-weight: bold;
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -218,6 +194,7 @@ def start_cleaning():
 
 def go_home():
     st.session_state.show_tasks = False
+    st.session_state.selected_user = None
 
 # חיבור לשיטס
 conn = st.connection("gsheets", type=GSheetsConnection)
@@ -269,7 +246,7 @@ if not st.session_state.show_tasks:
         pass
 
 # ==========================================
-# מסך 2: משימות ומשתתפים (Flash Cards)
+# מסך 2: משימות ומשתתפים
 # ==========================================
 else:
     if st.session_state.show_bubbles:
@@ -298,6 +275,31 @@ else:
                     custom_emoji = user_emojis.get(name, "👤")
                     PARTICIPANTS[name] = {"color": "#95a5a6", "image": custom_emoji, "type": "other"}
         
+        # תפריט בחירת המשתמש למעלה
+        st.markdown("### 👤 בחר מי מנקה עכשיו:")
+        
+        # יצירת אפשרויות יפות לתפריט הגלילה
+        options_with_emoji = [f"{PARTICIPANTS.get(name, {'image': '👤'})['image']} {name}" for name in all_names]
+        
+        # מציאת האינדקס של המשתמש שנבחר כרגע, אם יש כזה
+        current_index = 0
+        if st.session_state.selected_user in all_names:
+            current_index = all_names.index(st.session_state.selected_user)
+            
+        selected_option = st.selectbox(
+            label="בחר משתתף", 
+            options=options_with_emoji, 
+            index=current_index,
+            label_visibility="collapsed"
+        )
+        
+        # חילוץ השם הנקי מהאפשרות שנבחרה
+        # (מניחים שהשם הוא החלק שאחרי הרווח, כי האמוג'י הוא התו הראשון)
+        selected_user = " ".join(selected_option.split(" ")[1:])
+        st.session_state.selected_user = selected_user
+
+        st.divider()
+
         with st.expander("➕ הוספת משימה חדשה", expanded=False):
             with st.form("add_task_form"):
                 new_task_desc = st.text_input("תיאור המשימה")
@@ -337,72 +339,67 @@ else:
                 conn.update(data=edited_df)
                 st.toast("הטבלה התעדכנה בהצלחה! 💾")
                 st.rerun()
-
-        st.markdown('<div style="text-align:center; color:#888; margin-bottom:10px;">החלק ימינה/שמאלה בין השמות ↔️</div>', unsafe_allow_html=True)
         
-        tabs = st.tabs(all_names)
-        
-        for i, tab in enumerate(tabs):
-            user = all_names[i]
+        # --- הצגת כרטיסיית המשתמש הנבחר בלבד ---
+        if st.session_state.selected_user:
+            user = st.session_state.selected_user
+            user_info = PARTICIPANTS.get(user, {"color": "#95a5a6", "image": "👤"})
+            user_color = user_info["color"]
+            user_avatar = user_info["image"]
             
-            with tab:
-                user_info = PARTICIPANTS.get(user, {"color": "#95a5a6", "image": "👤"})
-                user_color = user_info["color"]
-                user_avatar = user_info["image"]
-                
-                st.markdown(f"""
-                <div class="participant-header" style="background-color: {user_color};">
-                    <div class="participant-avatar">{user_avatar}</div>
-                    <h2 class="participant-title">המשימות של {user}</h2>
-                </div>
-                """, unsafe_allow_html=True)
+            st.markdown(f"""
+            <div class="participant-header" style="background-color: {user_color};">
+                <div class="participant-avatar">{user_avatar}</div>
+                <h2 class="participant-title">המשימות של {user}</h2>
+            </div>
+            """, unsafe_allow_html=True)
 
-                with st.expander("✏️ לחץ כאן כדי לשנות את הדמות שלי"):
-                    with st.form(key=f"edit_avatar_{user}"):
-                        new_emoji = st.text_input("הדמות החדשה שלי:", value=user_avatar, max_chars=4)
-                        submitted = st.form_submit_button("שמור")
+            with st.expander("✏️ לחץ כאן כדי לשנות את הדמות שלי"):
+                with st.form(key=f"edit_avatar_{user}"):
+                    new_emoji = st.text_input("הדמות החדשה שלי:", value=user_avatar, max_chars=4)
+                    submitted = st.form_submit_button("שמור")
 
-                        if submitted:
-                            if new_emoji:
-                                if user in users_df['Name'].values:
-                                    users_df.loc[users_df['Name'] == user, 'Emoji'] = new_emoji
-                                else:
-                                    new_user_row = pd.DataFrame([{'Name': user, 'Emoji': new_emoji}])
-                                    users_df = pd.concat([users_df, new_user_row], ignore_index=True)
-                                
-                                conn.update(worksheet="Users", data=users_df)
-                                st.toast(f"הדמות של {user} עודכנה!")
-                                st.cache_data.clear()
-                                st.rerun()
+                    if submitted:
+                        if new_emoji:
+                            if user in users_df['Name'].values:
+                                users_df.loc[users_df['Name'] == user, 'Emoji'] = new_emoji
                             else:
-                                st.warning("צריך לבחור דמות (אמוג'י).")
-
-                user_tasks = df[df['Assignee'] == user].copy()
-                
-                if user_tasks.empty:
-                    st.info(f"ל-{user} אין כרגע משימות. איזה כיף לו/לה! 🎉")
-                else:
-                    for index, row in user_tasks.iterrows():
-                        status_val = row['Status']
-                        task_text = f"~~{row['Task']}~~" if status_val else row['Task']
-                        
-                        is_done = st.checkbox(
-                            task_text, 
-                            value=status_val, 
-                            key=f"task_{index}_{user}"
-                        )
-                        
-                        if is_done != status_val:
-                            df.at[index, 'Status'] = is_done
-                            conn.update(data=df)
+                                new_user_row = pd.DataFrame([{'Name': user, 'Emoji': new_emoji}])
+                                users_df = pd.concat([users_df, new_user_row], ignore_index=True)
                             
-                            if is_done:
-                                st.session_state.show_bubbles = True
-                                st.toast("כל הכבוד! משימה הושלמה! 🎉")
-                            else:
-                                st.toast("המשימה חזרה לרשימה 🔄")
-
+                            conn.update(worksheet="Users", data=users_df)
+                            st.toast(f"הדמות של {user} עודכנה!")
+                            st.cache_data.clear()
                             st.rerun()
+                        else:
+                            st.warning("צריך לבחור דמות (אמוג'י).")
+
+            user_tasks = df[df['Assignee'] == user].copy()
+            
+            if user_tasks.empty:
+                st.info(f"ל-{user} אין כרגע משימות. איזה כיף לו/לה! 🎉")
+            else:
+                for index, row in user_tasks.iterrows():
+                    status_val = row['Status']
+                    task_text = f"~~{row['Task']}~~" if status_val else row['Task']
+                    
+                    is_done = st.checkbox(
+                        task_text, 
+                        value=status_val, 
+                        key=f"task_{index}_{user}"
+                    )
+                    
+                    if is_done != status_val:
+                        df.at[index, 'Status'] = is_done
+                        conn.update(data=df)
+                        
+                        if is_done:
+                            st.session_state.show_bubbles = True
+                            st.toast("כל הכבוד! משימה הושלמה! 🎉")
+                        else:
+                            st.toast("המשימה חזרה לרשימה 🔄")
+
+                        st.rerun()
                      
     else:
         st.error("לא נמצאו עמודות מתאימות בגיליון (Assignee, Task, Status). נא לבדוק את קובץ הגוגל שיטס.")
