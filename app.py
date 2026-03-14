@@ -84,16 +84,17 @@ st.markdown("""
     
     /* עיצוב כרטיסייה למשימה */
     .task-card-content {
-        padding: 12px;
+        padding: 15px;
         border-radius: 8px;
         box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        margin-bottom: 8px;
+        margin-bottom: 10px;
         width: 100%;
         display: block;
+        min-height: 50px;
     }
     
     .task-text {
-        font-size: 1.05em;
+        font-size: 1.1em;
         font-weight: 500;
         color: #333;
         word-wrap: break-word; 
@@ -104,29 +105,35 @@ st.markdown("""
         color: #888;
     }
     
-    div[data-testid="column"] {
-        display: flex;
-        align-items: center;
-        justify-content: center;
+    /* --- פתרון גלישת המשימות לנייד --- */
+    /* מסיר padding שמפריע מ-column של Streamlit */
+    [data-testid="column"] {
         padding: 0 !important;
     }
     
-    div[data-testid="stHorizontalBlock"] {
+    /* מכריח את הצ'קבוקס והטקסט לשבת באותה שורה תמיד */
+    [data-testid="stHorizontalBlock"] {
+        display: flex !important;
+        flex-direction: row !important;
         flex-wrap: nowrap !important;
+        align-items: stretch !important;
+        gap: 0 !important;
+    }
+    
+    /* קובע רוחב מוחלט לתיבת הסימון (צד ימין בעברית) */
+    [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(1) {
+        width: 45px !important;
+        flex: 0 0 45px !important;
+        display: flex;
         align-items: center;
-        gap: 10px;
+        justify-content: center;
+        padding-top: 15px !important; /* יישור עם מרכז הכרטיסייה */
     }
     
-    div[data-testid="column"]:nth-of-type(1) {
-        flex: 0 0 40px !important; 
-        width: 40px !important;
-        min-width: 40px !important;
-    }
-    
-    div[data-testid="column"]:nth-of-type(2) {
-        flex: 1 1 auto !important; 
-        width: auto !important;
-        min-width: 0 !important; 
+    /* שאר המקום מוקדש לכרטיסיית הטקסט (צד שמאל בעברית) */
+    [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(2) {
+        width: calc(100% - 45px) !important;
+        flex: 1 1 auto !important;
     }
 
     /* כרטיסיות (Flash Cards) בנייד - עיצוב חדש */
@@ -270,13 +277,12 @@ else:
                     all_names.append(name)
                     PARTICIPANTS[name] = {"color": "#95a5a6", "image": "👤", "type": "other"}
                 
-        # תפריט צד
-        with st.sidebar:
-            st.header("➕ הוספת משימה חדשה")
+        # --- העברת הוספת משימה לתוך expander במקום sidebar כדי למנוע כתיבה אנכית במובייל ---
+        with st.expander("➕ הוספת משימה חדשה", expanded=False):
             with st.form("add_task_form"):
                 new_task_desc = st.text_input("תיאור המשימה")
                 new_task_assignee = st.selectbox("למי לשייך?", all_names)
-                submitted = st.form_submit_button("הוסף משימה")
+                submitted = st.form_submit_button("הוסף משימה", use_container_width=True)
                 
                 if submitted:
                     if new_task_desc:
@@ -287,11 +293,6 @@ else:
                         st.rerun()
                     else:
                         st.warning("יש להזין תיאור למשימה")
-            
-            st.divider()
-            if st.button("🏠 חזרה לדף הבית", use_container_width=True):
-                go_home()
-                st.rerun()
 
         # כותרת קטנה למעלה
         st.markdown('<div style="text-align:center; color:#888; margin-bottom:10px;">החלק ימינה/שמאלה בין השמות ↔️</div>', unsafe_allow_html=True)
@@ -321,41 +322,41 @@ else:
                     st.info(f"ל-{user} אין כרגע משימות. איזה כיף לו/לה! 🎉")
                 else:
                     for index, row in user_tasks.iterrows():
-                        with st.container():
-                            col1, col2 = st.columns([0.15, 0.85])
+                        # שימוש ב-st.columns ליצירת שורה אחת של צ'קבוקס וטקסט
+                        col1, col2 = st.columns([1, 9])
+                        
+                        with col1:
+                             status_val = bool(row['Status']) if pd.notna(row['Status']) else False
+                             is_done = st.checkbox("", value=status_val, key=f"task_{index}_{user}")
+                             
+                             if is_done != status_val:
+                                 df.at[index, 'Status'] = is_done
+                                 conn.update(data=df)
+                                 st.toast("הסטטוס עודכן! 💾")
+                                 st.rerun()
+                             
+                        with col2:
+                             if is_done:
+                                 bg_color = "#f0fdf4"
+                                 border_color = "#4caf50"
+                                 text_class = "completed-task"
+                             else:
+                                 bg_color = "#ffffff"
+                                 border_color = user_color 
+                                 text_class = ""
                             
-                            with col1:
-                                 status_val = bool(row['Status']) if pd.notna(row['Status']) else False
-                                 is_done = st.checkbox("", value=status_val, key=f"task_{index}_{user}")
-                                 
-                                 if is_done != status_val:
-                                     df.at[index, 'Status'] = is_done
-                                     conn.update(data=df)
-                                     st.toast("הסטטוס עודכן! 💾")
-                                     st.rerun()
-                                 
-                            with col2:
-                                 if is_done:
-                                     bg_color = "#f0fdf4"
-                                     border_color = "#4caf50"
-                                     text_class = "completed-task"
-                                 else:
-                                     bg_color = "#ffffff"
-                                     border_color = user_color 
-                                     text_class = ""
-                                
-                                 st.markdown(f"""
-                                 <div style="background-color: {bg_color}; border-right: 5px solid {border_color};" class="task-card-content">
-                                     <div class="task-text {text_class}">
-                                         {row['Task']}
-                                     </div>
+                             st.markdown(f"""
+                             <div style="background-color: {bg_color}; border-right: 5px solid {border_color};" class="task-card-content">
+                                 <div class="task-text {text_class}">
+                                     {row['Task']}
                                  </div>
-                                 """, unsafe_allow_html=True)
+                             </div>
+                             """, unsafe_allow_html=True)
                      
     else:
         st.error("לא נמצאו עמודות מתאימות בגיליון (Assignee, Task, Status). נא לבדוק את קובץ הגוגל שיטס.")
     
     st.divider()
-    if st.button("🏠 חזרה למסך הפתיחה"):
+    if st.button("🏠 חזרה למסך הפתיחה", use_container_width=True):
         go_home()
         st.rerun()
