@@ -10,9 +10,11 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ניהול מצב להפרדה בין מסך פתיחה למסך משימות
+# ניהול מצבים
 if 'show_tasks' not in st.session_state:
     st.session_state.show_tasks = False
+if 'show_bubbles' not in st.session_state:
+    st.session_state.show_bubbles = False
 
 # הגדרת משתתפים, צבעים ותמונות ברירת מחדל
 PARTICIPANTS = {
@@ -261,6 +263,13 @@ if not st.session_state.show_tasks:
 # מסך 2: משימות ומשתתפים (Flash Cards)
 # ==========================================
 else:
+    # הצגת אנימציה אם סומנה משימה בסיבוב הקודם
+    if st.session_state.show_bubbles:
+        # סטרימליט לא תומך בבועות סבון באופן מובנה, אז אנחנו משתמשים באפקט השלג (st.snow)
+        # שנראה ממש כמו פתיתי סבון/קצף ניקוי שנופלים! 🫧
+        st.snow()
+        st.session_state.show_bubbles = False
+
     df = get_data()
 
     if 'Assignee' in df.columns and 'Task' in df.columns and 'Status' in df.columns:
@@ -382,7 +391,14 @@ else:
                         if is_done != status_val:
                             df.at[index, 'Status'] = is_done
                             conn.update(data=df)
-                            st.toast("הסטטוס עודכן! 💾")
+                            
+                            if is_done:
+                                # מפעיל את בועות הסבון (שלג) בריענון הבא
+                                st.session_state.show_bubbles = True
+                                st.toast("כל הכבוד! משימה הושלמה! 🫧")
+                            else:
+                                st.toast("המשימה חזרה לרשימה 🔄")
+
                             st.rerun()
                      
     else:
