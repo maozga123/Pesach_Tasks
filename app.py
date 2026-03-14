@@ -4,8 +4,8 @@ import pandas as pd
 
 # הגדרת העמוד כולל התאמות למובייל
 st.set_page_config(
-    page_title="נקיונות או לא להיות", 
-    page_icon="🧽", 
+    page_title="נקיונות או לא להיות",
+    page_icon="🧽",
     layout="centered",
     initial_sidebar_state="collapsed"
 )
@@ -222,6 +222,17 @@ def go_home():
 # חיבור לשיטס
 conn = st.connection("gsheets", type=GSheetsConnection)
 
+# פונקציה לקריאת נתוני המשתמשים (אווטארים)
+@st.cache_data(ttl=3600)
+def get_users_data():
+    try:
+        users_df = conn.read(worksheet="Users", ttl="1s")
+        if 'Name' not in users_df.columns or 'Emoji' not in users_df.columns:
+            return pd.DataFrame(columns=['Name', 'Emoji'])
+        return users_df.dropna(subset=['Name'])
+    except Exception:
+        return pd.DataFrame(columns=['Name', 'Emoji'])
+
 def get_data():
     return conn.read(ttl="0s")
 
@@ -234,13 +245,11 @@ if not st.session_state.show_tasks:
     st.markdown('<div class="sub-title">ג\'רופי מנקים לפסח תשפ"ו ✨</div>', unsafe_allow_html=True)
     
     st.markdown('<div class="enter-btn-container">', unsafe_allow_html=True)
-    # כפתור מרכזי ענק בסטרימליט
     if st.button("🚀 לחץ כאן להתחיל לנקות! 🚀", use_container_width=True, type="primary"):
         start_cleaning()
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
     
-    # תצוגת התקדמות משפחתית כבר בדף הבית
     try:
         df = get_data()
         if 'Status' in df.columns:
@@ -257,34 +266,38 @@ if not st.session_state.show_tasks:
                 st.balloons()
                 st.success("הבית כשר! אפשר להתחיל את הסדר! 🍷")
     except Exception as e:
-        pass # במקרה של שגיאה בטעינת נתונים פשוט לא נציג גרף
+        pass
 
 # ==========================================
 # מסך 2: משימות ומשתתפים (Flash Cards)
 # ==========================================
 else:
-    # הצגת אנימציה אם סומנה משימה בסיבוב הקודם
     if st.session_state.show_bubbles:
         st.balloons()
         st.session_state.show_bubbles = False
 
     df = get_data()
+    users_df = get_users_data()
+    user_emojis = {row['Name']: row['Emoji'] for index, row in users_df.iterrows()}
+
+    for name, emoji in user_emojis.items():
+        if name in PARTICIPANTS:
+            PARTICIPANTS[name]['image'] = emoji
+        else:
+            PARTICIPANTS[name] = {"color": "#95a5a6", "image": emoji, "type": "other"}
 
     if 'Assignee' in df.columns and 'Task' in df.columns and 'Status' in df.columns:
-        
-        # המרת עמודת סטטוס לבוליאני כדי למנוע שגיאות ב-data_editor
         df['Status'] = df['Status'].apply(lambda x: bool(x) if pd.notna(x) else False)
         
         all_names = list(PARTICIPANTS.keys())
-        
         if not df.empty:
             sheet_names = df['Assignee'].dropna().unique().tolist()
             for name in sheet_names:
                 if name not in all_names and name.strip() != "":
                     all_names.append(name)
-                    PARTICIPANTS[name] = {"color": "#95a5a6", "image": "👤", "type": "other"}
-                
-        # --- העברת הוספת משימה לתוך expander ---
+                    custom_emoji = user_emojis.get(name, "👤")
+                    PARTICIPANTS[name] = {"color": "#95a5a6", "image": custom_emoji, "type": "other"}
+        
         with st.expander("➕ הוספת משימה חדשה", expanded=False):
             with st.form("add_task_form"):
                 new_task_desc = st.text_input("תיאור המשימה")
@@ -301,54 +314,32 @@ else:
                     else:
                         st.warning("יש להזין תיאור למשימה")
 
-        # --- הוספת ניהול ועריכת משימות ---
         with st.expander("✏️ ניהול ועריכת כל המשימות", expanded=False):
             st.markdown('<p style="font-size: 0.9em; color: #555;">כאן תוכלו לערוך טקסטים של משימות קיימות, להעביר משימות מילד לילד, ואפילו למחוק שורות שלמות. <b>לא לשכוח ללחוץ על השמירה!</b></p>', unsafe_allow_html=True)
             
-            # יצירת העתק של הטבלה לעריכה, עם הבטחת סוגים
             display_df = df[['Assignee', 'Task', 'Status']].copy()
-            display_df['Status'] = display_df['Status'].astype(bool) # הבטחה שזה בוליאני אמיתי
+            display_df['Status'] = display_df['Status'].astype(bool)
             
-            # עורך טבלה אינטראקטיבי של סטרימליט
             edited_df = st.data_editor(
                 display_df,
-                num_rows="dynamic", # מאפשר מחיקה והוספה של שורות
+                num_rows="dynamic",
                 use_container_width=True,
                 hide_index=True,
                 column_config={
-                    "Assignee": st.column_config.SelectboxColumn(
-                        "אחראי",
-                        help="מי מנקה?",
-                        width="medium",
-                        options=all_names,
-                        required=True,
-                    ),
-                    "Task": st.column_config.TextColumn(
-                        "המשימה",
-                        help="מה צריך לנקות?",
-                        width="large",
-                        required=True,
-                    ),
-                    "Status": st.column_config.CheckboxColumn(
-                        "בוצע?",
-                        help="האם המשימה הושלמה?",
-                        default=False,
-                    )
+                    "Assignee": st.column_config.SelectboxColumn("אחראי", help="מי מנקה?", width="medium", options=all_names, required=True),
+                    "Task": st.column_config.TextColumn("המשימה", help="מה צריך לנקות?", width="large", required=True),
+                    "Status": st.column_config.CheckboxColumn("בוצע?", help="האם המשימה הושלמה?", default=False)
                 }
             )
             
-            # כפתור שמירה ייעודי לעורך הטבלה
             if st.button("💾 שמור את הטבלה מעודכנת בגוגל שיטס", type="primary", use_container_width=True):
-                # מניעת שמירת שורות ריקות בטעות
                 edited_df = edited_df.dropna(subset=['Task'])
                 conn.update(data=edited_df)
                 st.toast("הטבלה התעדכנה בהצלחה! 💾")
                 st.rerun()
 
-        # כותרת קטנה למעלה
         st.markdown('<div style="text-align:center; color:#888; margin-bottom:10px;">החלק ימינה/שמאלה בין השמות ↔️</div>', unsafe_allow_html=True)
         
-        # Tabs כ-Flash Cards
         tabs = st.tabs(all_names)
         
         for i, tab in enumerate(tabs):
@@ -359,27 +350,42 @@ else:
                 user_color = user_info["color"]
                 user_avatar = user_info["image"]
                 
-                # עיצוב מרכזי של תמונת הפרופיל והכותרת
                 st.markdown(f"""
                 <div class="participant-header" style="background-color: {user_color};">
                     <div class="participant-avatar">{user_avatar}</div>
                     <h2 class="participant-title">המשימות של {user}</h2>
                 </div>
                 """, unsafe_allow_html=True)
-                
+
+                with st.expander("✏️ לחץ כאן כדי לשנות את הדמות שלי"):
+                    with st.form(key=f"edit_avatar_{user}"):
+                        new_emoji = st.text_input("הדמות החדשה שלי:", value=user_avatar, max_chars=4)
+                        submitted = st.form_submit_button("שמור")
+
+                        if submitted:
+                            if new_emoji:
+                                if user in users_df['Name'].values:
+                                    users_df.loc[users_df['Name'] == user, 'Emoji'] = new_emoji
+                                else:
+                                    new_user_row = pd.DataFrame([{'Name': user, 'Emoji': new_emoji}])
+                                    users_df = pd.concat([users_df, new_user_row], ignore_index=True)
+                                
+                                conn.update(worksheet="Users", data=users_df)
+                                st.toast(f"הדמות של {user} עודכנה!")
+                                st.cache_data.clear()
+                                st.rerun()
+                            else:
+                                st.warning("צריך לבחור דמות (אמוג'י).")
+
                 user_tasks = df[df['Assignee'] == user].copy()
                 
                 if user_tasks.empty:
                     st.info(f"ל-{user} אין כרגע משימות. איזה כיף לו/לה! 🎉")
                 else:
                     for index, row in user_tasks.iterrows():
-                        # הסטטוס כבר הומר לבוליאני למעלה
                         status_val = row['Status']
-                        
-                        # גיבוי למחיקת טקסט במכשירים ישנים (שימוש ב-Markdown של סטרימליט)
                         task_text = f"~~{row['Task']}~~" if status_val else row['Task']
                         
-                        # --- הפתרון האולטימטיבי: שימוש בצ'קבוקס הטבעי של סטרימליט בלבד! ---
                         is_done = st.checkbox(
                             task_text, 
                             value=status_val, 
@@ -391,7 +397,6 @@ else:
                             conn.update(data=df)
                             
                             if is_done:
-                                # מפעיל את הבלונים בריענון הבא
                                 st.session_state.show_bubbles = True
                                 st.toast("כל הכבוד! משימה הושלמה! 🎉")
                             else:
