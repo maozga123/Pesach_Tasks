@@ -265,6 +265,9 @@ else:
 
     if 'Assignee' in df.columns and 'Task' in df.columns and 'Status' in df.columns:
         
+        # המרת עמודת סטטוס לבוליאני כדי למנוע שגיאות ב-data_editor
+        df['Status'] = df['Status'].apply(lambda x: bool(x) if pd.notna(x) else False)
+        
         all_names = list(PARTICIPANTS.keys())
         
         if not df.empty:
@@ -295,9 +298,13 @@ else:
         with st.expander("✏️ ניהול ועריכת כל המשימות", expanded=False):
             st.markdown('<p style="font-size: 0.9em; color: #555;">כאן תוכלו לערוך טקסטים של משימות קיימות, להעביר משימות מילד לילד, ואפילו למחוק שורות שלמות. <b>לא לשכוח ללחוץ על השמירה!</b></p>', unsafe_allow_html=True)
             
+            # יצירת העתק של הטבלה לעריכה, עם הבטחת סוגים
+            display_df = df[['Assignee', 'Task', 'Status']].copy()
+            display_df['Status'] = display_df['Status'].astype(bool) # הבטחה שזה בוליאני אמיתי
+            
             # עורך טבלה אינטראקטיבי של סטרימליט
             edited_df = st.data_editor(
-                df,
+                display_df,
                 num_rows="dynamic", # מאפשר מחיקה והוספה של שורות
                 use_container_width=True,
                 hide_index=True,
@@ -359,8 +366,8 @@ else:
                     st.info(f"ל-{user} אין כרגע משימות. איזה כיף לו/לה! 🎉")
                 else:
                     for index, row in user_tasks.iterrows():
-                        # קריאת הסטטוס
-                        status_val = bool(row['Status']) if pd.notna(row['Status']) else False
+                        # הסטטוס כבר הומר לבוליאני למעלה
+                        status_val = row['Status']
                         
                         # גיבוי למחיקת טקסט במכשירים ישנים (שימוש ב-Markdown של סטרימליט)
                         task_text = f"~~{row['Task']}~~" if status_val else row['Task']
